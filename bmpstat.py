@@ -145,6 +145,11 @@ class BMPstat(object):
         if w < 0 or w >= width + padding:
             raise ValueNotInExcludeEnd("Width value out of bounds, the padding is included", w, 0, width+padding)
 
+    def check_width(self, w):
+        width, _ = self.get_size()
+        if w < 0 or w >= width:
+            raise ValueNotInExcludeEnd("Width value out of bounds", w, 0, width)
+
     def check_height(self, h):
         _, height = self.get_size()
         if h < 0 or h >= height:
@@ -184,21 +189,30 @@ class BMPstat(object):
             self.raw_image[offset] &= mask
         return self.apply_bitmask(i, j, layer, bitmask)
 
-    def apply_bitmask(self, i: int, j: int, layer: int, bitmask):
-        """
-        Apply a mask to bits of specific pixel (i,j) and layer/channel (RGB)
-        """
-        self.check_width_w_padding(i)
-        self.check_height(j)
-        self.check_layer(layer)
+    def get_pixel_offset(self, i: int, j: int):
+        width, height = self.get_size()
+        if i<0 or i>=width:
+            raise ValueNotInExcludeEnd(f"Pixel({i},{j}) the i is out of range", i, 0, width)
+        if j<0 or j>=height:
+            raise ValueNotInExcludeEnd(f"Pixel({i},{j}) the j is out of range", j, 0, height)
         """
             Base offset of BMP payload: self.get_offset()
             Which row? j*eff_rowsize
             Which pixel of the current row? i*Bpp
+        """
+        return self.get_offset() + j*self.get_eff_rowsize() + i*self.get_Bpp()
+
+    def apply_bitmask(self, i: int, j: int, layer: int, bitmask):
+        """
+        Apply a mask to bits of specific pixel (i,j) and layer/channel (RGB)
+        """
+        self.check_width(i)
+        self.check_height(j)
+        self.check_layer(layer)
+        """
             Which layer RGB? layer
             Which sublayer [0,1,2,3,4,5,6,7] to modify? How to modify? bitmask  
         """
-        offset = self.get_offset() + j*self.get_eff_rowsize() + i*self.get_Bpp() + layer
+        offset = self.get_pixel_offset(i,j) + layer
         bitmask(offset)
         return self
-
