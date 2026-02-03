@@ -202,6 +202,31 @@ class BMPstat(object):
         """
         return self.get_offset() + j*self.get_eff_rowsize() + i*self.get_Bpp()
 
+    def set_pixel(self, i: int, j: int, red: int, green: int, blue: int):
+        if red<0 or red>255:
+            raise ValueNotInExcludeEnd(f"Pixel({i},{j}) the R:{red} is out of range", red, 0, 255)
+        if green<0 or green>255:
+            raise ValueNotInExcludeEnd(f"Pixel({i},{j}) the G:{green} is out of range", green, 0, 255)
+        if blue<0 or blue>255:
+            raise ValueNotInExcludeEnd(f"Pixel({i},{j}) the B:{blue} is out of range", red, 0, 255)
+        """
+            Pixel(i, j) offset:
+            - Layer R: offset + 2
+            - Layer G: offset + 1
+            - Layer B: offset + 0
+
+            The Bpp avoid to overwrite other pixels.
+        """
+        offset=self.get_pixel_offset(i,j)
+        Bpp = self.get_Bpp()
+        if Bpp > 0:
+            self.raw_image[offset] = blue
+        if Bpp > 1:
+            self.raw_image[offset+1] = green
+        if Bpp > 2:
+            self.raw_image[offset+2] = blue
+        return self
+
     def apply_bitmask(self, i: int, j: int, layer: int, bitmask):
         """
         Apply a mask to bits of specific pixel (i,j) and layer/channel (RGB)
