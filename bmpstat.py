@@ -106,10 +106,11 @@ class BMPstat(object):
         [+] size:             4 bytes
         """
         start = self.get_offset()
-        payload_size = self.get_payload_size()
-        if len(payload) != payload_size:
-            raise ValueError('Error')
-        self.raw_image[start:start+payload_size] = payload
+        host_payload_size = self.get_payload_size()
+        data_size = len(payload)
+        if data_size > host_payload_size:
+            raise ValueError(f'Error payload size ({data_size}) > host data payload ({host_payload_size})')
+        self.raw_image[start:start+host_payload_size] = payload
     
     def get_padding(self):
         """
